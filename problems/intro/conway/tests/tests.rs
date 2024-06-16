@@ -45,6 +45,7 @@ fn grid_neighbours() {
     ]
     .into_iter()
     .collect();
+
     assert_eq!(neighbours, expected);
 }
 
@@ -59,6 +60,7 @@ fn first_rule() {
     let final_grid = get_grid(vec![vec![0, 0, 0], vec![0, 0, 0], vec![0, 0, 0]]);
     let mut game = GameOfLife::from_grid(grid.clone());
     game.step();
+
     assert!(game.get_grid() == &final_grid);
 }
 
@@ -77,7 +79,10 @@ fn second_rule() {
         vec![0, 0, 0]
     ]);
     let mut game = GameOfLife::from_grid(grid.clone());
+
     game.step();
+    println!("{:?}", game.get_grid());
+
     assert!(game.get_grid() == &final_grid);
 }
 

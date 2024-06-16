@@ -1,11 +1,6 @@
 #![forbid(unsafe_code)]
 
-////////////////////////////////////////////////////////////////////////////////
-/// 1. Any live cell with fewer than two live neighbors dies as if caused by under-population.
-/// 2. Any live cell with two or three live neighbors lives on to the next generation.
-/// 3. Any live cell with more than three live neighbors dies, as if by over-population.
-/// 4. Any dead cell with exactly three live neighbors becomes a live cell, as if by reproduction.
-////////////////////////////////////////////////////////////////////////////////
+use std::fmt;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Grid<T> {
@@ -92,9 +87,21 @@ impl<T: Clone + Default> Grid<T> {
     }
 }
 
+impl<T: fmt::Debug + Clone + Default> fmt::Debug for Grid<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for row in 0..self.rows {
+            for col in 0..self.cols {
+                write!(f, "{:?} ", self.get(row, col))?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Cell {
     Dead,
     Alive,
@@ -113,19 +120,61 @@ pub struct GameOfLife {
     grid: Grid<Cell>,
 }
 
+////////////////////////////////////////////////////////////////////////////////
+#[derive(Debug)]
+enum Existance {
+    Live,
+    Die,
+}
+
 impl GameOfLife {
     pub fn from_grid(grid: Grid<Cell>) -> Self {
         // TODO: your code goes here.
-        unimplemented!()
+        GameOfLife { grid }
     }
 
     pub fn get_grid(&self) -> &Grid<Cell> {
         // TODO: your code goes here.
-        unimplemented!()
+        &self.grid
     }
 
     pub fn step(&mut self) {
-        // TODO: your code goes here.
-        unimplemented!()
+        /*
+         1. Any live cell with fewer than two live neighbors dies as if caused by under-population.
+         2. Any live cell with two or three live neighbors lives on to the next generation.
+         3. Any live cell with more than three live neighbors dies, as if by over-population.
+         4. Any dead cell with exactly three live neighbors becomes a live cell, as if by reproduction.
+        */
+        let (rows, cols) = self.grid.size();
+        let mut graveyard: Vec<(usize, usize)> = vec![];
+        let mut heaven: Vec<(usize, usize)> = vec![];
+        for row in 0..rows {
+            for col in 0..cols {
+                let alive_neighbours = self
+                    .grid
+                    .neighbours(row, col)
+                    .iter()
+                    .filter(|(row, col)| *self.grid.get(*row, *col) == Cell::Alive)
+                    .count();
+
+                match (self.grid.get(row, col), alive_neighbours) {
+                    // Rule 1 and Rule 3 for live cells
+                    (Cell::Alive, 0..=1) | (Cell::Alive, 4..=8) => graveyard.push((row, col)),
+                    // Rule 2 for live cells
+                    (Cell::Alive, 2) | (Cell::Alive, 3) => (),
+                    // Rule 4 for dead cells
+                    (Cell::Dead, 3) => heaven.push((row, col)),
+                    _ => (),
+                }
+            }
+        }
+        // Killing cells
+        graveyard
+            .iter()
+            .for_each(|(row, col)| self.grid.set(Cell::Dead, *row, *col));
+        // Ressurecting cells
+        heaven
+            .iter()
+            .for_each(|(row, col)| self.grid.set(Cell::Alive, *row, *col));
     }
 }
